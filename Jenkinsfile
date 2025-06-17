@@ -15,7 +15,7 @@ pipeline {
                         url: "${env.REPO_URL}",
                         credentialsId: 'github-token'
                     ]]
-                ])
+                ])  
             }
         }
 
@@ -57,4 +57,3 @@ pipeline {
         }
     }
 }
-    
