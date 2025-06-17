@@ -15,7 +15,7 @@ pipeline {
                         url: "${env.REPO_URL}",
                         credentialsId: 'github-token'
                     ]]
-                ])  
+                ])
             }
         }
 
@@ -30,6 +30,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+
+                        // Descobrir a última versão
                         def output = sh(
                             script: "git ls-remote --heads https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git | grep 'refs/heads/v' | awk -F'/' '{print \$3}' | sort -V | tail -n1",
                             returnStdout: true
@@ -43,12 +45,18 @@ pipeline {
 
                         echo "Nova versão: ${novaVersao}"
 
+                        // Criar branch e fazer push
                         sh """
                             git config user.email "jenkins@localhost"
                             git config user.name "Jenkins"
 
                             git checkout -b ${novaVersao}
                             git push https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git ${novaVersao}
+                        """
+
+                        // Tentar voltar para a branch original, garantindo que ela existe localmente
+                        sh """
+                            git fetch origin ${env.BRANCH_BASE}
                             git checkout ${env.BRANCH_BASE}
                         """
                     }
