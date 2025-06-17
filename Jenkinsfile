@@ -15,7 +15,7 @@ pipeline {
                         url: "${env.REPO_URL}",
                         credentialsId: 'github-token'
                     ]]
-                ])
+                ])  
             }
         }
 
@@ -31,9 +31,10 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
 
-                        // Descobrir a última versão
+                        // Obtém a última versão existente do tipo "vX"
                         def output = sh(
-                            script: "git ls-remote --heads https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git | grep 'refs/heads/v' | awk -F'/' '{print \$3}' | sort -V | tail -n1",
+                            script: """git ls-remote --heads https://\$GITHUB_TOKEN@github.com/KaioAlves07/kablink-docker.git \
+                                | grep 'refs/heads/v' | awk -F'/' '{print \$3}' | sort -V | tail -n1""",
                             returnStdout: true
                         ).trim()
 
@@ -45,20 +46,17 @@ pipeline {
 
                         echo "Nova versão: ${novaVersao}"
 
-                        // Criar branch e fazer push
-                        sh """
-                            git config user.email "jenkins@localhost"
-                            git config user.name "Jenkins"
+                        // Configura Git para push
+                        sh "git config user.email 'jenkins@localhost'"
+                        sh "git config user.name 'Jenkins'"
 
-                            git checkout -b ${novaVersao}
-                            git push https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git ${novaVersao}
-                        """
+                        // Cria a nova branch e faz push
+                        sh "git checkout -b ${novaVersao}"
+                        sh "git push https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git ${novaVersao}"
 
-                        // Tentar voltar para a branch original, garantindo que ela existe localmente
-                        sh """
-                            git fetch origin ${env.BRANCH_BASE}
-                            git checkout ${env.BRANCH_BASE}
-                        """
+                        // Volta para a branch principal com segurança
+                        sh "git fetch origin ${env.BRANCH_BASE}"
+                        sh "git checkout -B ${env.BRANCH_BASE} origin/${env.BRANCH_BASE}"
                     }
                 }
             }
