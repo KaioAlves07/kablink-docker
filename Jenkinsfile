@@ -15,7 +15,7 @@ pipeline {
                         url: "${env.REPO_URL}",
                         credentialsId: 'github-token'
                     ]]
-                ])  
+                ])
             }
         }
 
@@ -31,32 +31,38 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
 
-                        // Obtém a última versão existente do tipo "vX"
-                        def output = sh(
-                            script: """git ls-remote --heads https://\$GITHUB_TOKEN@github.com/KaioAlves07/kablink-docker.git \
-                                | grep 'refs/heads/v' | awk -F'/' '{print \$3}' | sort -V | tail -n1""",
+                        // Obtém a última versão do tipo "vX"
+                        def ultimaVersao = sh(
+                            script: '''
+                                git ls-remote --heads https://$GITHUB_TOKEN@github.com/KaioAlves07/kablink-docker.git |
+                                grep 'refs/heads/v' | awk -F'/' '{print $3}' | sort -V | tail -n1
+                            ''',
                             returnStdout: true
                         ).trim()
 
-                        def novaVersao = "v1"
-                        if (output) {
-                            def ultima = output.replace("v", "").toInteger()
-                            novaVersao = "v${ultima + 1}"
+                        def novaVersao = 'v1'
+                        if (ultimaVersao) {
+                            def numero = ultimaVersao.replace('v', '').toInteger()
+                            novaVersao = "v${numero + 1}"
                         }
 
                         echo "Nova versão: ${novaVersao}"
 
-                        // Configura Git para push
-                        sh "git config user.email 'jenkins@localhost'"
-                        sh "git config user.name 'Jenkins'"
+                        // Configura Git localmente
+                        sh 'git config user.email "jenkins@localhost"'
+                        sh 'git config user.name "Jenkins"'
 
-                        // Cria a nova branch e faz push
+                        // Cria nova branch e faz push de forma segura
                         sh "git checkout -b ${novaVersao}"
-                        sh "git push https://${GITHUB_TOKEN}@github.com/KaioAlves07/kablink-docker.git ${novaVersao}"
+                        sh '''
+                            git push https://$GITHUB_TOKEN@github.com/KaioAlves07/kablink-docker.git $GIT_BRANCH
+                        '''.replace('$GIT_BRANCH', novaVersao)
 
-                        // Volta para a branch principal com segurança
-                        sh "git fetch origin ${env.BRANCH_BASE}"
-                        sh "git checkout -B ${env.BRANCH_BASE} origin/${env.BRANCH_BASE}"
+                        // Garante que a branch base existe localmente
+                        sh '''
+                            git fetch origin $BRANCH_BASE:$BRANCH_BASE
+                            git checkout $BRANCH_BASE
+                        '''
                     }
                 }
             }
