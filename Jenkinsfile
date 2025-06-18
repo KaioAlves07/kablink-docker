@@ -21,7 +21,7 @@ pipeline {
 
         stage('Validação') {
             steps {
-                echo 'Simulando testes e validações...'
+                echo 'Simulando testes e validações....'
                 sh 'echo "Tudo certo!"'
             }
         }
