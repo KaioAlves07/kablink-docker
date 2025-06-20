@@ -20,7 +20,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo 'Executando deploy em produção...'
+                echo 'Executando deploy em produção....'
                 // Seu script de deploy aqui
             }
         }
