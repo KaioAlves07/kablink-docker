@@ -32,6 +32,6 @@ pipeline {
         }
         failure {
             githubNotify context: 'ci/jenkins', status: 'FAILURE', description: 'Build falhou', targetUrl: "${env.BUILD_URL}"
-        }
+        }   
     }
 }
